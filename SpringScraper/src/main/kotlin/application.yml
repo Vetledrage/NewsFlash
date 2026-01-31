@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/scraper
+    username: scraper
+    password: scraper
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+scraper:
+  userAgent: "MyScraperBot/1.0 (contact: you@example.com)"
+  baseUrl: "https://example.com"

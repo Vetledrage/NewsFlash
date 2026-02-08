@@ -13,4 +13,4 @@ spring:
 
 scraper:
   userAgent: "MyScraperBot/1.0 (contact: you@example.com)"
-  baseUrl: "https://example.com"
+  baseUrl: "https://www.vg.no/"

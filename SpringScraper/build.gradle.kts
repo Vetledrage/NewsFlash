@@ -19,11 +19,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-
     implementation("org.jsoup:jsoup:1.17.2")
-
     runtimeOnly("org.postgresql:postgresql:42.7.3")
-
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 

@@ -9,9 +9,11 @@ import java.net.URI
 import java.time.Instant
 import kotlin.math.min
 
+
 @Service
 class ScrapeService(
     private val repo: ArticleRepo,
+    @Value("\${scraper.baseUrl}") private val baseUrl: String,
     @Value("\${scraper.userAgent}") private val userAgent: String
 ) {
     private val log = LoggerFactory.getLogger(ScrapeService::class.java)
@@ -113,7 +115,7 @@ class ScrapeService(
             val authority = uri.authority ?: return url
             val path = uri.path ?: ""
 
-            // Optionally drop common tracking parameters
+            // Optionally drop common tracking parameters// add to build.gradle.kts (dependencies block)
             val query = uri.rawQuery
                 ?.split("&")
                 ?.mapNotNull { part ->

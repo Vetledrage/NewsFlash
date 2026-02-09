@@ -27,6 +27,8 @@ dependencies {
     testImplementation("com.h2database:h2")
     implementation("org.flywaydb:flyway-core")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("com.h2database:h2")
+
 
 
 

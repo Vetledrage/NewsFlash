@@ -4,6 +4,8 @@ plugins {
     id("io.spring.dependency-management") version "1.1.6"
     kotlin("plugin.spring") version "1.9.24"
     kotlin("plugin.jpa") version "1.9.24"
+    id("org.flywaydb.flyway") version "12.0.0"
+
 }
 
 group = "org.example"
@@ -15,6 +17,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")

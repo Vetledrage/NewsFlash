@@ -1,15 +1,22 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/scraper
+    url: jdbc:postgresql://localhost:5432/scraper?sslmode=disable
     username: scraper
     password: scraper
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 scraper:
   userAgent: "MyScraperBot/1.0 (contact: you@example.com)"

@@ -1,5 +1,4 @@
-package org.example
-
+import repository.ArticleRepository
 import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
@@ -12,7 +11,7 @@ import kotlin.math.min
 
 @Service
 class ScrapeService(
-    private val repo: ArticleRepo,
+    private val repo: ArticleRepository,
     @Value("\${scraper.baseUrl}") private val baseUrl: String,
     @Value("\${scraper.userAgent}") private val userAgent: String
 ) {

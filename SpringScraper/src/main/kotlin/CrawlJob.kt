@@ -1,4 +1,3 @@
-package org.example
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled

@@ -1,3 +1,6 @@
+package app
+
+import app.model.Article
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 

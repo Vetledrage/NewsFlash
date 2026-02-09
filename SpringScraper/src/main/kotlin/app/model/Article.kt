@@ -1,8 +1,10 @@
+package app.model
+
 import jakarta.persistence.*
 import java.time.Instant
 
 @Entity
-@Table(name = "article")
+@Table(name = "articles")
 class Article(
 
     @Id

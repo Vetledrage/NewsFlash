@@ -5,7 +5,6 @@ plugins {
     kotlin("plugin.spring") version "1.9.24"
     kotlin("plugin.jpa") version "1.9.24"
     id("org.flywaydb.flyway") version "12.0.0"
-
 }
 
 group = "org.example"
@@ -25,6 +24,12 @@ dependencies {
     implementation("org.jsoup:jsoup:1.17.2")
     runtimeOnly("org.postgresql:postgresql:42.7.3")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.h2database:h2")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+
+
 }
 
 tasks.test {

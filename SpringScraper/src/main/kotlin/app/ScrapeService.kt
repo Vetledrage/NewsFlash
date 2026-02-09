@@ -1,4 +1,7 @@
-import repository.ArticleRepository
+package app
+
+import app.model.Article
+import app.repository.ArticleRepository
 import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory

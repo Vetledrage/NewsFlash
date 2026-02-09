@@ -1,0 +1,9 @@
+package app.repository
+
+import app.model.Article
+import org.springframework.data.jpa.repository.JpaRepository
+import java.util.*
+
+interface ArticleRepository : JpaRepository<Article, String> {
+    fun findByUrl(url: String): Optional<Article>
+}

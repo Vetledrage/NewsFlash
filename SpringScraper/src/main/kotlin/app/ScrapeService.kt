@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.net.URI
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import kotlin.math.min
 
 
@@ -59,7 +61,7 @@ class ScrapeService(
                 url = savedUrl.take(2000),
                 title = title.take(1000),
                 body = text,
-                scrapedAt = Instant.now()
+                scrapedAt = LocalDateTime.now()
             )
         )
 

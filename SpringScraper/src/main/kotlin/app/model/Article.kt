@@ -2,6 +2,8 @@ package app.model
 
 import jakarta.persistence.*
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 @Entity
 @Table(name = "articles")
@@ -22,5 +24,6 @@ class Article(
     var body: String,
 
     @Column(name = "scraped_at", nullable = false)
-    var scrapedAt: Instant = Instant.now()
+    var scrapedAt: LocalDateTime
+
 )

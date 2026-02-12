@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import java.time.LocalDateTime
@@ -77,5 +79,52 @@ class ArticleRepositoryTest(
         } catch (e: org.springframework.dao.DataIntegrityViolationException) {
             assert(true)
         }
+    }
+
+    @Test
+    fun `should page and filter by source ignoring case`() {
+        articleRepository.deleteAll()
+        val now = LocalDateTime.now()
+
+        articleRepository.save(
+            Article(
+                articleId = "VG:paging-1",
+                url = "https://example.com/p1",
+                title = "P1",
+                body = "This is a test article body with sufficient content to meet minimum length requirements",
+                scrapedAt = now.minusMinutes(1),
+                source = "VG",
+                externalId = "paging-1",
+            )
+        )
+        articleRepository.save(
+            Article(
+                articleId = "NRK:paging-2",
+                url = "https://example.com/p2",
+                title = "P2",
+                body = "This is a test article body with sufficient content to meet minimum length requirements",
+                scrapedAt = now,
+                source = "NRK",
+                externalId = "paging-2",
+            )
+        )
+        articleRepository.save(
+            Article(
+                articleId = "VG:paging-3",
+                url = "https://example.com/p3",
+                title = "P3",
+                body = "This is a test article body with sufficient content to meet minimum length requirements",
+                scrapedAt = now,
+                source = "VG",
+                externalId = "paging-3",
+            )
+        )
+
+        val pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "scrapedAt"))
+        val page = articleRepository.findBySourceIgnoreCase("vg", pageable)
+
+        assertEquals(1, page.content.size)
+        assertEquals("VG", page.content[0].source)
+        assertEquals(2, page.totalElements)
     }
 }

@@ -1,7 +1,12 @@
 package app.service
 
 import app.dto.ArticleDto
+import app.model.Article
 import app.repository.ArticleRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 
 @Service
@@ -17,15 +22,49 @@ class ArticleService(
             articleRepository.findTop50ByOrderByScrapedAtDesc().take(limit)
         }
 
-        return articles.map {
-            ArticleDto(
-                articleId = it.articleId,
-                url = it.url,
-                title = it.title,
-                scrapedAt = it.scrapedAt,
-                source = it.source,
-                externalId = it.externalId,
-            )
-        }
+        return articles.map { it.toDto() }
     }
+
+    fun getById(id: String): ArticleDto? {
+        return articleRepository.findById(id).orElse(null)?.toDto()
+    }
+
+    fun getArticles(pageable: Pageable, source: String?): Page<ArticleDto> {
+        val safePageable = withSafeSort(pageable)
+        val page = if (!source.isNullOrBlank()) {
+            articleRepository.findBySourceIgnoreCase(source, safePageable)
+        } else {
+            articleRepository.findAll(safePageable)
+        }
+
+        return page.map { it.toDto() }
+    }
+
+    private fun withSafeSort(pageable: Pageable): Pageable {
+        val allowed = setOf("scrapedAt", "title", "source")
+        val hasAllowedSort = pageable.sort.any { it.property in allowed }
+
+        val safeSort = if (pageable.sort.isUnsorted || !hasAllowedSort) {
+            Sort.by(Sort.Direction.DESC, "scrapedAt")
+        } else {
+            // Keep only allowed properties; ignore the rest.
+            val safeOrders = pageable.sort.filter { it.property in allowed }.toList()
+            if (safeOrders.isEmpty()) {
+                Sort.by(Sort.Direction.DESC, "scrapedAt")
+            } else {
+                Sort.by(safeOrders)
+            }
+        }
+
+        return PageRequest.of(pageable.pageNumber, pageable.pageSize, safeSort)
+    }
+
+    private fun Article.toDto(): ArticleDto = ArticleDto(
+        articleId = articleId,
+        url = url,
+        title = title,
+        scrapedAt = scrapedAt,
+        source = source,
+        externalId = externalId,
+    )
 }

@@ -1,0 +1,13 @@
+# OS
+.DS_Store
+
+# Gradle
+.gradle/
+**/build/
+
+# IntelliJ / JetBrains
+.idea/
+*.iml
+
+# Logs
+*.log

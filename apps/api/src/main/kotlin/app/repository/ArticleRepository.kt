@@ -6,4 +6,6 @@ import java.util.*
 
 interface ArticleRepository : JpaRepository<Article, String> {
     fun findByUrl(url: String): Optional<Article>
+
+    fun findTop50ByOrderByScrapedAtDesc(): List<Article>
 }

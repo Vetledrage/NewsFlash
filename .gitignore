@@ -1,13 +1,33 @@
 # OS
 .DS_Store
+Thumbs.db
 
 # Gradle
 .gradle/
 **/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin / Java
+*.class
 
 # IntelliJ / JetBrains
 .idea/
+**/.idea/
 *.iml
+out/
 
 # Logs
 *.log
+
+# Local env files
+.env
+.env.*
+
+# Databases (local)
+*.db
+*.sqlite
+*.sqlite3
+
+# macOS misc
+.AppleDouble
+.LSOverride

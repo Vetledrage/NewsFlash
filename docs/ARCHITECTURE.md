@@ -1,55 +1,63 @@
 # NewsFlash Architecture
 
-## Modules (single Gradle project for now)
-Keep it as one Spring Boot app initially. We can split into modules later if needed.
+## Repo layout (current)
+This repository is a monorepo.
 
-## Package structure (target)
-app/
-api/
-ArticleController.kt
-dto/
-application/
-CrawlJob.kt
-CrawlFrontpageUseCase.kt
-SummarizeArticleUseCase.kt
-domain/
-Article.kt
-Source.kt
-StoryCluster.kt
-similarity/
-infrastructure/
-scraping/
-SourceScraper.kt
-vg/
-VgFrontpageCrawler.kt
-VgArticleScraper.kt
-persistence/
-ArticleEntity.kt
-ArticleRepository.kt
-Flyway migrations in resources
-ai/
-SummarizerClient.kt
-EmbeddingClient.kt
-(stub implementations first)
+- `apps/api/` – Kotlin + Spring Boot backend (runs as the API)
+- `apps/web/` – frontend placeholder (not implemented yet)
+- `services/` – placeholder folders for future framework-agnostic services
+- `docs/` – documentation
 
-## Flow (today)
-Scheduler -> Frontpage crawler -> Article scraper -> Save article
+The backend is currently a single Spring Boot app under `apps/api` (we can split into multiple Gradle modules later if/when needed).
 
-## Flow (target)
-Scheduler -> Crawl frontpages (by source)
--> extract article URLs
--> scrape article (raw text, metadata)
--> upsert article (no duplicates)
--> enqueue AI processing (summary + embedding)
--> compute similarity and cluster into stories
+## Backend structure (current)
+Current Kotlin packages inside `apps/api/src/main/kotlin/app/`:
 
-## Database choice (recommendation)
-Start with PostgreSQL for production, H2 for tests.
-Reason: relational schema + constraints + Flyway migrations are simple and strong.
-Vector search can be added later with:
-- pgvector (if you stay in Postgres), or
-- external vector DB (later, not now)
+- `app.controller` – HTTP layer (Spring MVC controllers)
+  - `ArticleController` exposes `GET /api/articles`
+- `app.service` – service layer (business logic)
+  - `ArticleService` maps entities → DTO and handles sorting/limits
+- `app.repository` – persistence layer
+  - `ArticleRepository` (Spring Data JPA)
+- `app.model` – JPA entities
+  - `Article`
+- `app` – scraping/ingestion logic (MVP)
+  - `Crawler`, `ScrapeService`, and scheduled `CrawlJob`
 
-## “Don’t overbuild”
-- Keep AI pipeline synchronous at first (process after save).
-- Later we can add async queue/outbox.
+> Note: Scraping is still implemented inside the API app today (MVP). Target direction is to move source-specific crawling/scraping into `services/ingestion` (framework-agnostic) and make the API purely a read/write layer.
+
+## Scheduling and scraping (feature toggles)
+Scraping is explicitly gated behind a feature toggle:
+
+- Property: `scraper.enabled`
+  - default in `application.yml`: `true`
+  - in `application-test.yml`: `false` (no scraping in tests)
+
+`CrawlJob` is only registered as a bean when `scraper.enabled=true` via `@ConditionalOnProperty`.
+
+Scheduling is enabled in all profiles except `test`:
+
+- `app.config.SchedulingConfig` has `@EnableScheduling` and `@Profile("!test")`
+
+This keeps CI/test runs deterministic and prevents background jobs from affecting tests.
+
+## Runtime flow (today)
+### Scraping flow (when enabled)
+Scheduler (`CrawlJob`) → Frontpage crawling (`Crawler`) → Per-article scrape (`ScrapeService`) → Persist (`ArticleRepository`)
+
+### API flow
+HTTP request → Controller (`ArticleController`) → Service (`ArticleService`) → Repository (`ArticleRepository`) → DB
+
+## Future flow (target)
+- Ingestion (crawler/scraper) runs separately (worker or service module)
+- API serves articles/feed from DB
+- Later, AI processing (summaries/embeddings) runs async and stores results
+
+## Database & migrations
+- Flyway migrations live under `apps/api/src/main/resources/db/migration`
+- H2 is used by default for local/dev today; PostgreSQL is already included as a runtime dependency for future production use.
+
+## Environments / profiles
+- `application.yml` – default config (no hard-coded secrets)
+- `application-dev.yml` – dev-only overrides (e.g., H2 console)
+- `application-test.yml` – test profile (scheduling off, scraper disabled)

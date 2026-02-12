@@ -9,9 +9,16 @@ Build a backend that:
 5) Exposes an API for a mobile frontend (scroll feed).
 
 ## Current status
-- App scrapes VG frontpage and saves ~60 articles into an in-memory H2 database.
-- Flyway migration exists for `articles`.
-- Scheduler runs every 10 minutes.
+- Repo is a monorepo.
+- Backend app lives in `apps/api` (Kotlin + Spring Boot).
+- App can scrape VG frontpage and save ~60 articles into an in-memory H2 database.
+- Flyway migrations exist for `articles`.
+- Scheduler is enabled for all profiles except `test`.
+- Scraping is gated by a feature toggle:
+  - `scraper.enabled=true` (default) enables scheduled scraping
+  - `scraper.enabled=false` disables the scheduled crawl job bean
+- Initial REST API layer exists:
+  - `GET /api/articles` returns the latest articles (up to 50)
 
 ## Non-goals (for now)
 - No frontend implementation yet.

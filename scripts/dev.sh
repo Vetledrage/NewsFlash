@@ -72,8 +72,15 @@ require_npm() {
 
 API_PID=""
 WEB_PID=""
+CLEANED_UP=0
 
 cleanup() {
+  # Prevent running cleanup twice (INT triggers EXIT too)
+  if [[ "${CLEANED_UP}" -eq 1 ]]; then
+    return 0
+  fi
+  CLEANED_UP=1
+
   echo -e "\n==> Shutting down..."
 
   if [[ -n "${WEB_PID}" ]]; then
@@ -85,22 +92,46 @@ cleanup() {
     kill "$API_PID" >/dev/null 2>&1 || true
   fi
 
-  # Second try: if something is still listening on the port, kill that PID.
+  # If something is still listening on the web port, kill that PID.
+  if port_in_use "$WEB_PORT"; then
+    local wpid
+    wpid="$(pid_listening_on_port "$WEB_PORT")"
+    if [[ -n "${wpid}" ]]; then
+      echo "    Port ${WEB_PORT} still in use -> stopping pid ${wpid}" >&2
+      kill "$wpid" >/dev/null 2>&1 || true
+    fi
+  fi
+
+  # If something is still listening on the API port, kill that PID.
   if port_in_use "$API_PORT"; then
     local pid
     pid="$(pid_listening_on_port "$API_PORT")"
     if [[ -n "${pid}" ]]; then
       echo "    Port ${API_PORT} still in use -> stopping pid ${pid}" >&2
       kill "$pid" >/dev/null 2>&1 || true
+
+      # Give the process a moment to exit and release the port (avoid racey warnings)
+      for _ in {1..10}; do
+        if ! port_in_use "$API_PORT"; then
+          break
+        fi
+        sleep 0.2
+      done
     fi
   fi
 
-  # Best-effort verification
+  # Best-effort verification (warn only if still in use after grace period)
   if port_in_use "$API_PORT"; then
     local pid
     pid="$(pid_listening_on_port "$API_PORT")"
     echo "WARN: Port ${API_PORT} is still in use (pid=${pid:-unknown})." >&2
     echo "      You can inspect it with: lsof -nP -iTCP:${API_PORT} -sTCP:LISTEN" >&2
+  fi
+  if port_in_use "$WEB_PORT"; then
+    local wpid
+    wpid="$(pid_listening_on_port "$WEB_PORT")"
+    echo "WARN: Port ${WEB_PORT} is still in use (pid=${wpid:-unknown})." >&2
+    echo "      You can inspect it with: lsof -nP -iTCP:${WEB_PORT} -sTCP:LISTEN" >&2
   fi
 }
 trap cleanup INT TERM EXIT
@@ -113,6 +144,17 @@ if port_in_use "$API_PORT"; then
   echo "Fix options:" >&2
   echo "  1) Stop the process: kill ${pid:-<pid>}" >&2
   echo "  2) Or run with a different port: API_PORT=8081 ./scripts/dev.sh" >&2
+  exit 1
+fi
+
+if port_in_use "$WEB_PORT"; then
+  pid="$(pid_listening_on_port "$WEB_PORT")"
+  echo "ERROR: WEB_PORT=${WEB_PORT} is already in use (pid=${pid:-unknown})." >&2
+  echo "This usually happens when a previous Next.js dev server didn't shut down cleanly." >&2
+  echo >&2
+  echo "Fix options:" >&2
+  echo "  1) Stop the process: kill ${pid:-<pid>}" >&2
+  echo "  2) Or run with a different port: WEB_PORT=3001 ./scripts/dev.sh" >&2
   exit 1
 fi
 
@@ -154,7 +196,9 @@ fi
 require_npm
 
 npm install >/dev/null
-npm run dev -- --port "${WEB_PORT}" &
+
+# Start Next.js directly so WEB_PID matches the actual server process.
+npx --yes next dev --port "${WEB_PORT}" &
 WEB_PID=$!
 
 echo "    Web PID: $WEB_PID"

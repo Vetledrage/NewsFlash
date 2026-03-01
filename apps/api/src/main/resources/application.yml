@@ -16,4 +16,4 @@ spring:
 scraper:
   enabled: true
   userAgent: "MyScraperBot/1.0 (contact: you@example.com)"
-  baseUrl: "https://www.vg.no/"
+  sources: "VG,NRK"

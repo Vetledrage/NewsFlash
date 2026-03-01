@@ -44,13 +44,18 @@ class ArticleService(
         val allowed = setOf("scrapedAt", "title", "source")
         val hasAllowedSort = pageable.sort.any { it.property in allowed }
 
+        val defaultSort = Sort.by(
+            Sort.Order.desc("scrapedAt"),
+            Sort.Order.desc("articleId"),
+        )
+
         val safeSort = if (pageable.sort.isUnsorted || !hasAllowedSort) {
-            Sort.by(Sort.Direction.DESC, "scrapedAt")
+            defaultSort
         } else {
             // Keep only allowed properties; ignore the rest.
             val safeOrders = pageable.sort.filter { it.property in allowed }.toList()
             if (safeOrders.isEmpty()) {
-                Sort.by(Sort.Direction.DESC, "scrapedAt")
+                defaultSort
             } else {
                 Sort.by(safeOrders)
             }
@@ -66,5 +71,6 @@ class ArticleService(
         scrapedAt = scrapedAt,
         source = source,
         externalId = externalId,
+        summary = summary,
     )
 }

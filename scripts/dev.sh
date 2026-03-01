@@ -12,8 +12,111 @@ API_BASE_URL="${API_BASE_URL:-http://localhost:${API_PORT}}"
 
 cd "$ROOT_DIR"
 
+port_in_use() {
+  local port="$1"
+  lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+pid_listening_on_port() {
+  local port="$1"
+  # Prints first PID found (if any)
+  lsof -nP -t -iTCP:"${port}" -sTCP:LISTEN 2>/dev/null | head -n 1 || true
+}
+
+bootstrap_node() {
+  # Some IDEs (e.g. WebStorm) provide Node/npm implicitly, while non-interactive shells may not.
+  # Try common version managers if npm isn't already available.
+  if command -v npm >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # nvm (common on macOS)
+  if [[ -z "${NVM_DIR:-}" ]]; then
+    export NVM_DIR="$HOME/.nvm"
+  fi
+  if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
+    # shellcheck disable=SC1090
+    . "${NVM_DIR}/nvm.sh" >/dev/null 2>&1 || true
+  fi
+
+  # asdf
+  if [[ -s "$HOME/.asdf/asdf.sh" ]]; then
+    # shellcheck disable=SC1090
+    . "$HOME/.asdf/asdf.sh" >/dev/null 2>&1 || true
+  fi
+
+  # volta
+  if [[ -d "$HOME/.volta/bin" ]]; then
+    export PATH="$HOME/.volta/bin:$PATH"
+  fi
+}
+
+require_npm() {
+  bootstrap_node
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "ERROR: 'npm' not found in PATH." >&2
+    echo "This is why dev.sh can work in WebStorm but fail in a terminal: the IDE may provide Node/npm, your shell might not." >&2
+    echo >&2
+    echo "Fix options:" >&2
+    echo "  - Install Node.js (e.g. 'brew install node')" >&2
+    echo "  - Or ensure your Node version manager is initialized for shells (nvm/asdf/volta)." >&2
+    echo >&2
+    echo "Debug:" >&2
+    echo "  PATH=$PATH" >&2
+    echo "  which node: $(command -v node || echo '<missing>')" >&2
+    echo "  which npm:  $(command -v npm || echo '<missing>')" >&2
+    return 1
+  fi
+}
+
+API_PID=""
+WEB_PID=""
+
+cleanup() {
+  echo -e "\n==> Shutting down..."
+
+  if [[ -n "${WEB_PID}" ]]; then
+    kill "$WEB_PID" >/dev/null 2>&1 || true
+  fi
+
+  if [[ -n "${API_PID}" ]]; then
+    # First try: stop the Gradle bootRun wrapper.
+    kill "$API_PID" >/dev/null 2>&1 || true
+  fi
+
+  # Second try: if something is still listening on the port, kill that PID.
+  if port_in_use "$API_PORT"; then
+    local pid
+    pid="$(pid_listening_on_port "$API_PORT")"
+    if [[ -n "${pid}" ]]; then
+      echo "    Port ${API_PORT} still in use -> stopping pid ${pid}" >&2
+      kill "$pid" >/dev/null 2>&1 || true
+    fi
+  fi
+
+  # Best-effort verification
+  if port_in_use "$API_PORT"; then
+    local pid
+    pid="$(pid_listening_on_port "$API_PORT")"
+    echo "WARN: Port ${API_PORT} is still in use (pid=${pid:-unknown})." >&2
+    echo "      You can inspect it with: lsof -nP -iTCP:${API_PORT} -sTCP:LISTEN" >&2
+  fi
+}
+trap cleanup INT TERM EXIT
+
+if port_in_use "$API_PORT"; then
+  pid="$(pid_listening_on_port "$API_PORT")"
+  echo "ERROR: API_PORT=${API_PORT} is already in use (pid=${pid:-unknown})." >&2
+  echo "This usually happens when a previous dev.sh/bootRun didn't shut down cleanly." >&2
+  echo >&2
+  echo "Fix options:" >&2
+  echo "  1) Stop the process: kill ${pid:-<pid>}" >&2
+  echo "  2) Or run with a different port: API_PORT=8081 ./scripts/dev.sh" >&2
+  exit 1
+fi
+
 echo "==> Starting API on ${API_BASE_URL}"
-./gradlew :apps:api:bootRun > /tmp/newsflash-api.log 2>&1 &
+./gradlew :apps:api:bootRun --args="--server.port=${API_PORT}" > /tmp/newsflash-api.log 2>&1 &
 API_PID=$!
 
 echo "    API PID: $API_PID (logs: /tmp/newsflash-api.log)"
@@ -47,24 +150,19 @@ API_BASE_URL=${API_BASE_URL}
 EOF
 fi
 
+require_npm
+
 npm install >/dev/null
 npm run dev -- --port "${WEB_PORT}" &
 WEB_PID=$!
 
 echo "    Web PID: $WEB_PID"
 
-echo "\n==> Dev is running"
+echo -e "\n==> Dev is running"
 echo "    Web: http://localhost:${WEB_PORT}"
 echo "    API: ${API_BASE_URL}"
 
-echo "\nPress Ctrl+C to stop both."
-
-cleanup() {
-  echo "\n==> Shutting down..."
-  kill "$WEB_PID" >/dev/null 2>&1 || true
-  kill "$API_PID" >/dev/null 2>&1 || true
-}
-trap cleanup INT TERM EXIT
+echo -e "\nPress Ctrl+C to stop both."
 
 wait
 

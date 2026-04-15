@@ -1,9 +1,7 @@
 package app.model
 
 import jakarta.persistence.*
-import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZonedDateTime
 
 @Entity
 @Table(name = "articles")
@@ -30,6 +28,10 @@ class Article(
     var source: String,
 
     @Column(name = "external_id", nullable = false)
-    var externalId: String
+    var externalId: String,
+
+    @Lob
+    @Column(name = "summary")
+    var summary: String? = null
 
 )

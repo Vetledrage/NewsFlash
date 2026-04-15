@@ -1,5 +1,6 @@
 package app
 
+import app.sources.NewsSource
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -13,34 +14,34 @@ class Crawler(
 ) {
     private val log = LoggerFactory.getLogger(Crawler::class.java)
 
-    fun crawlFrontPage(startUrl: String, maxArticles: Int = 50) {
+    fun crawlFrontPage(source: NewsSource, maxArticles: Int = 50) {
+        val startUrl = source.baseUrl
         val doc = Jsoup.connect(startUrl)
             .userAgent(userAgent)
             .timeout(15_000)
             .get()
 
-        // Extract candidate links from the front page only
         val links = doc.select("a[href]")
             .mapNotNull { it.absUrl("href").takeIf { abs -> abs.isNotBlank() } }
             .filter { sameHost(startUrl, it) }
             .map { stripFragment(it) }
             .distinct()
 
-        // Keep only links that look like article URLs (based on your ID pattern)
         val articleLinks = links
-            .filter { extractArticleIdOrNull(it) != null }
+            .filter { source.extractExternalId(it) != null }
             .take(maxArticles)
 
-        log.info("Front page {} -> found {} article links (using {})", startUrl, articleLinks.size, maxArticles)
+        log.info(
+            "Front page {} ({}) -> found {} article links (using {})",
+            startUrl,
+            source.sourceId,
+            articleLinks.size,
+            maxArticles
+        )
 
         articleLinks.forEach { url ->
             scrapeService.scrapeAndSave(url)
         }
-    }
-
-    private fun extractArticleIdOrNull(url: String): String? {
-        val regex = Regex(""".*/i/([^/]+)(/.*)?$""")
-        return regex.find(url)?.groupValues?.get(1)
     }
 
     private fun sameHost(baseUrl: String, url: String): Boolean {

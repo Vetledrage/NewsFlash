@@ -127,4 +127,45 @@ class ArticleRepositoryTest(
         assertEquals("VG", page.content[0].source)
         assertEquals(2, page.totalElements)
     }
+
+    @Test
+    fun `should allow same externalId across different sources`() {
+        articleRepository.deleteAll()
+        val now = LocalDateTime.now()
+
+        articleRepository.save(
+            Article(
+                articleId = "VG:same-ext",
+                url = "https://example.com/vg",
+                title = "VG article",
+                body = "This is a test article body with sufficient content to meet minimum length requirements",
+                scrapedAt = now,
+                source = "VG",
+                externalId = "same-ext",
+                summary = null,
+            )
+        )
+
+        articleRepository.save(
+            Article(
+                articleId = "NRK:same-ext",
+                url = "https://example.com/nrk",
+                title = "NRK article",
+                body = "This is a test article body with sufficient content to meet minimum length requirements",
+                scrapedAt = now,
+                source = "NRK",
+                externalId = "same-ext",
+                summary = "summary",
+            )
+        )
+
+        val vg = articleRepository.findById("VG:same-ext").orElseThrow()
+        val nrk = articleRepository.findById("NRK:same-ext").orElseThrow()
+        assertEquals("same-ext", vg.externalId)
+        assertEquals("same-ext", nrk.externalId)
+        assertEquals("VG", vg.source)
+        assertEquals("NRK", nrk.source)
+        assertEquals(null, vg.summary)
+        assertEquals("summary", nrk.summary)
+    }
 }

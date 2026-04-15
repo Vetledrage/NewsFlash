@@ -1,5 +1,6 @@
 package app
 
+import app.sources.NewsSource
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
@@ -13,10 +14,20 @@ import org.springframework.stereotype.Component
 )
 class CrawlJob(
     private val crawler: Crawler,
-    @Value("\${scraper.baseUrl}") private val baseUrl: String
+    private val sources: List<NewsSource>,
+    @Value("\${scraper.sources:VG}") private val enabledSourcesRaw: String,
 ) {
     @Scheduled(fixedDelayString = "PT10M")
     fun run() {
-        crawler.crawlFrontPage(baseUrl, maxArticles = 60)
+        val enabled = enabledSourcesRaw
+            .split(',')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+
+        val toCrawl = sources.filter { it.sourceId in enabled }
+        toCrawl.forEach { source ->
+            crawler.crawlFrontPage(source, maxArticles = 60)
+        }
     }
 }

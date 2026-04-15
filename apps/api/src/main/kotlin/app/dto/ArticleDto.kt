@@ -9,4 +9,5 @@ data class ArticleDto(
     val scrapedAt: LocalDateTime,
     val source: String,
     val externalId: String,
+    val summary: String?,
 )

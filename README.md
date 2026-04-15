@@ -49,3 +49,4 @@ Overrides:
 ```zsh
 API_PORT=8080 WEB_PORT=3000 API_BASE_URL=http://localhost:8080 ./scripts/dev.sh
 ```
+```

@@ -1,52 +1,68 @@
 # NewsFlash
 
-Monorepo for NewsFlash.
+Monorepo for NewsFlash — a TikTok-style vertical news feed.
 
 ## Structure
 
-- `apps/api/` – Kotlin + Spring Boot backend (current working app)
+- `apps/api/` – Kotlin + Spring Boot backend
 - `apps/web/` – Next.js frontend (TikTok-style vertical feed)
-- `services/` – Future framework-agnostic services (ingestion, summarization, ranking, etc.)
+- `services/` – Future microservices (ingestion, summarization, ranking, etc.)
 - `packages/` – Shared libraries (future)
 - `docs/` – Project documentation
 
-## Build & test
+## Prerequisites
 
-Run backend tests from repo root:
+- **Java 17+** (for the API)
+- **Node.js 18+** and **npm** (for the frontend)
 
-```zsh
-./gradlew :apps:api:test
-```
-
-## Run backend
-
-Start the Spring Boot app:
+## Run the API
 
 ```zsh
 ./gradlew :apps:api:bootRun
 ```
 
-Health check (Actuator):
+The API starts at **http://localhost:8080**.
+
+Health check:
 
 ```zsh
-curl -i http://localhost:8080/actuator/health
+curl http://localhost:8080/actuator/health
 ```
 
-## Run API + Web (recommended)
-
-One command to start both the API and the Next.js web app:
+## Run the Frontend
 
 ```zsh
-./scripts/dev.sh
+cd apps/web
+npm install   # first time only
+npm run dev
 ```
 
-Defaults:
-- API: `http://localhost:8080`
-- Web: `http://localhost:3000`
+The frontend starts at **http://localhost:3000**.
 
-Overrides:
+## Run Both (two terminals)
+
+**Terminal 1 — API:**
 
 ```zsh
-API_PORT=8080 WEB_PORT=3000 API_BASE_URL=http://localhost:8080 ./scripts/dev.sh
+./gradlew :apps:api:bootRun
 ```
+
+**Terminal 2 — Web:**
+
+```zsh
+cd apps/web && npm run dev
+```
+
+## Run Tests
+
+Backend:
+
+```zsh
+./gradlew :apps:api:test
+```
+
+Frontend:
+
+```zsh
+cd apps/web && npm test
 ```

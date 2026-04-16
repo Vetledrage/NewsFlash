@@ -59,8 +59,9 @@ export function VerticalFeed({ pageSize, prefetchThreshold = 3, source }: Props)
     (e: React.MouseEvent<HTMLDivElement>) => {
       const el = containerRef.current;
       if (!el) return;
-      const x = e.clientX;
-      const w = window.innerWidth;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const w = rect.width;
       const goPrev = x < w * 0.45;
       const goNext = x > w * 0.55;
       if (!goPrev && !goNext) return;
@@ -85,9 +86,9 @@ export function VerticalFeed({ pageSize, prefetchThreshold = 3, source }: Props)
 
     if (query.isError) {
       return (
-        <div className="h-dvh w-screen grid place-items-center p-6 text-center">
+        <div className="h-full w-full grid place-items-center p-6 text-center">
           <div>
-            <p className="text-lg font-semibold">Couldn’t load articles</p>
+            <p className="text-lg font-semibold">Could not load articles</p>
             <p className="mt-2 text-sm text-white/70">Try refreshing.</p>
           </div>
         </div>
@@ -96,7 +97,7 @@ export function VerticalFeed({ pageSize, prefetchThreshold = 3, source }: Props)
 
     if (articles.length === 0) {
       return (
-        <div className="h-dvh w-screen grid place-items-center p-6 text-center">
+        <div className="h-full w-full grid place-items-center p-6 text-center">
           <div>
             <p className="text-lg font-semibold">No articles yet</p>
             <p className="mt-2 text-sm text-white/70">Check back soon.</p>
@@ -120,7 +121,7 @@ export function VerticalFeed({ pageSize, prefetchThreshold = 3, source }: Props)
       ref={containerRef}
       onScroll={onScroll}
       onClick={onTap}
-      className="h-dvh w-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth overscroll-contain touch-pan-y"
+      className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth overscroll-contain touch-pan-y"
     >
       {content}
     </div>

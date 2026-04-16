@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import type { Article } from "@/lib/types";
 import { timeAgo } from "@/lib/utils/time";
 import { ActionRail } from "@/features/feed/components/ActionRail";
+import { saveArticle } from "@/app/actions/articles";
+import { ShareToDmModal } from "@/components/dms/ShareToDmModal";
 
 export function ArticleCard({
   article,
@@ -16,6 +18,23 @@ export function ArticleCard({
 }) {
   const [liked, setLiked] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [showShare, setShowShare] = React.useState(false);
+
+  const handleSave = async () => {
+    if (saved || saving) return;
+    setSaving(true);
+    const res = await saveArticle({
+      articleUrl: article.url,
+      articleTitle: article.title,
+      articleSummary: article.summary,
+      articleImageUrl: article.imageUrl,
+      sourceName: article.source,
+      externalArticleId: article.externalId,
+    });
+    if (!res.error) setSaved(true);
+    setSaving(false);
+  };
 
   const summary =
     article.summary ??
@@ -23,7 +42,7 @@ export function ArticleCard({
 
   return (
     <section
-      className="relative h-dvh w-screen snap-start overflow-hidden bg-bg"
+      className="relative h-full w-full snap-start overflow-hidden bg-bg"
       aria-label={article.title}
     >
       {/* Background */}
@@ -48,7 +67,7 @@ export function ArticleCard({
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 flex h-[calc(100dvh-160px)] flex-col justify-end px-5 pb-6">
+      <div className="relative z-10 flex h-[calc(100%-160px)] flex-col justify-end px-5 pb-6">
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0.85, y: 0 }}
@@ -85,14 +104,25 @@ export function ArticleCard({
           liked={liked}
           saved={saved}
           onLike={() => setLiked((v) => !v)}
-          onSave={() => setSaved((v) => !v)}
-          onShare={() => {
-            // UI-only placeholder
-            console.log("share", article.articleId);
-          }}
+          onSave={handleSave}
+          onShare={() => setShowShare(true)}
         />
       </div>
+
+      {showShare && (
+        <ShareToDmModal
+          open={showShare}
+          onClose={() => setShowShare(false)}
+          article={{
+            url: article.url,
+            title: article.title,
+            summary: article.summary,
+            imageUrl: article.imageUrl,
+            source: article.source,
+            externalId: article.externalId,
+          }}
+        />
+      )}
     </section>
   );
 }
-
